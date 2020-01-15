@@ -1,19 +1,10 @@
-import "./BitcoinPrices.scss";
-import {
-  Container,
-  LinearProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Snackbar
-} from "@material-ui/core";
-import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
-import createPlotlyComponent from "react-plotly.js/factory";
 import DateFnsUtils from "@date-io/date-fns";
+import { Container, LinearProgress, Snackbar, Table, TableBody, TableCell, TableHead, TableRow } from "@material-ui/core";
+import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import Plotly from "plotly.js-basic-dist";
 import React, { Component } from "react";
+import createPlotlyComponent from "react-plotly.js/factory";
+import "./BitcoinPrices.scss";
 const Plot = createPlotlyComponent(Plotly);
 
 export class BitcoinPrices extends Component {
@@ -33,6 +24,7 @@ export class BitcoinPrices extends Component {
   }
   componentDidMount = async () => {
     this.getCurrentPrice();
+    this.getPricesFromDates(this.formatDateString(this.state.beginDate), this.formatDateString(this.state.endDate));
   };
   getResponseJSON = async url => {
     const response = await fetch(url);
@@ -44,7 +36,7 @@ export class BitcoinPrices extends Component {
     this.setState({ currentPrice: currentPrice });
   };
   getPricesFromDates = async (startDate, endDate) => {
-    this.setState({ loading: true });
+    this.setState({ loading: true, progress: 0 });
     const response = await this.getResponseJSON(
       `https://api.coindesk.com/v1/bpi/historical/close.json?start=${startDate}&end=${endDate}`
     );
@@ -53,9 +45,6 @@ export class BitcoinPrices extends Component {
     }
     this.setState({ loading: false });
   };
-  componentWillMount() {
-    this.getPricesFromDates(this.formatDateString(this.state.beginDate), this.formatDateString(this.state.endDate));
-  }
   formatDateString = date => {
     return `${date.getFullYear()}-${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1}-${
       date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()
@@ -110,7 +99,7 @@ export class BitcoinPrices extends Component {
             <LinearProgress />
           ) : (
             !error && (
-              <div>
+              <div key="not-loading">
                 <Table aria-label="bitcoin table">
                   <TableHead>
                     <TableRow>
@@ -133,7 +122,7 @@ export class BitcoinPrices extends Component {
                       x: prices.map(row => row.date),
                       y: prices.map(row => row.price),
                       type: "scatter",
-                      mode: "lines+markers",
+                      mode: "lines",
                       marker: { color: "blue" }
                     }
                   ]}

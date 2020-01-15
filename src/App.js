@@ -1,9 +1,8 @@
-
 import React from "react";
 import "./App.scss";
 import { BitcoinPrices } from "./BitcoinPrices/BitcoinPrices";
 import { Navbar } from "./Navbar/Navbar";
-import { Footer} from "./Footer/Footer";
+import { Footer } from "./Footer/Footer";
 
 function App() {
   return (
