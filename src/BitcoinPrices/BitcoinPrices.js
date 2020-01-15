@@ -1,5 +1,14 @@
 import DateFnsUtils from "@date-io/date-fns";
-import { Container, LinearProgress, Snackbar, Table, TableBody, TableCell, TableHead, TableRow } from "@material-ui/core";
+import {
+  Container,
+  LinearProgress,
+  Snackbar,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
+} from "@material-ui/core";
 import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import Plotly from "plotly.js-basic-dist";
 import React, { Component } from "react";
@@ -66,16 +75,23 @@ export class BitcoinPrices extends Component {
   // @param {Date} date => the date to update in the state
   // @param {string} type => either "beginDate" or "endDate", refers to the type of date to
   // manipulate in the state
-  // function exits and sets an error if beginDate > endDate or if endDate < beginDate
+  // function exits and sets an error if beginDate > endDate or if endDate < beginDate || current date
   handleDateChange = (date, type) => {
     this.setState({ error: "" });
     if (type === "beginDate" && date > this.state.endDate) {
       this.setState({ error: "Begin date cannot be greater than end date" });
       return;
     }
-    if (type === "endDate" && date < this.state.beginDate) {
-      this.setState({ error: "End date cannot be greater than begin date" });
-      return;
+    if (type === "endDate") {
+      if (date < this.state.beginDate) {
+        this.setState({ error: "End date cannot be greater than begin date" });
+        return;
+      }
+      const currentDate = new Date();
+      if (date > currentDate) {
+        this.setState({ error: "End date cannot be greater than current date" });
+        return;
+      }
     }
     this.setState({ [type]: date }, () => {
       this.setState({ prices: [] });
