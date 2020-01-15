@@ -1,3 +1,5 @@
+## App is deployed [here](https://thebriando.github.io/crypto-app/)
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
