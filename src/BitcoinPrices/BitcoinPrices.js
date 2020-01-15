@@ -1,10 +1,19 @@
-import DateFnsUtils from "@date-io/date-fns";
-import { Container, LinearProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@material-ui/core";
-import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
-import React, { Component } from "react";
 import "./BitcoinPrices.scss";
-import Plotly from "plotly.js-basic-dist";
+import {
+  Container,
+  LinearProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Snackbar
+} from "@material-ui/core";
+import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import createPlotlyComponent from "react-plotly.js/factory";
+import DateFnsUtils from "@date-io/date-fns";
+import Plotly from "plotly.js-basic-dist";
+import React, { Component } from "react";
 const Plot = createPlotlyComponent(Plotly);
 
 export class BitcoinPrices extends Component {
@@ -18,7 +27,8 @@ export class BitcoinPrices extends Component {
       prices: [],
       beginDate: prevDate,
       endDate: currentDate,
-      loading: false
+      loading: false,
+      error: ""
     };
   }
   componentDidMount = async () => {
@@ -51,16 +61,17 @@ export class BitcoinPrices extends Component {
       date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()
     }`;
   };
-  handleBeginDateChange = date => {
-    this.setState({ beginDate: date }, () => {
-      this.setState({ prices: [] });
-      const beginDateStr = this.formatDateString(this.state.beginDate);
-      const endDateStr = this.formatDateString(this.state.endDate);
-      this.getPricesFromDates(beginDateStr, endDateStr);
-    });
-  };
-  handleEndDateChange = date => {
-    this.setState({ endDate: date }, () => {
+  handleDateChange = (date, type) => {
+    this.setState({ error: "" });
+    if (type === "beginDate" && date > this.state.endDate) {
+      this.setState({ error: "Begin date cannot be greater than end date" });
+      return;
+    }
+    if (type === "endDate" && date < this.state.beginDate) {
+      this.setState({ error: "End date cannot be greater than begin date" });
+      return;
+    }
+    this.setState({ [type]: date }, () => {
       this.setState({ prices: [] });
       const beginDateStr = this.formatDateString(this.state.beginDate);
       const endDateStr = this.formatDateString(this.state.endDate);
@@ -68,63 +79,78 @@ export class BitcoinPrices extends Component {
     });
   };
   render() {
-    const { currentPrice, prices, beginDate, endDate, loading } = this.state;
+    const { currentPrice, prices, beginDate, endDate, loading, error } = this.state;
     return (
-      <Container>
-        <h1>Current Bitcoin Price: {currentPrice} USD</h1>
-        <div className="date-pickers">
-          <h2 className="date-pickers-header">View Daily Bitcoin Prices</h2>
-          <div className="date-picker begin-date">
-            <MuiPickersUtilsProvider utils={DateFnsUtils}>
-              <DatePicker label="Begin Date" value={beginDate} onChange={date => this.handleBeginDateChange(date)} />
-            </MuiPickersUtilsProvider>
+      <div className="bitcoin_prices">
+        <Container>
+          <h1>Current Bitcoin Price: {currentPrice} USD</h1>
+          <div className="date-pickers">
+            <h2 className="date-pickers-header">View Daily Bitcoin Prices</h2>
+            <div className="date-picker begin-date">
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <DatePicker
+                  label="Begin Date"
+                  value={beginDate}
+                  onChange={date => this.handleDateChange(date, "beginDate")}
+                />
+              </MuiPickersUtilsProvider>
+            </div>
+            <div className="date-picker end-date">
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <DatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={date => this.handleDateChange(date, "endDate")}
+                />
+              </MuiPickersUtilsProvider>
+            </div>
           </div>
-          <div className="date-picker end-date">
-            <MuiPickersUtilsProvider utils={DateFnsUtils}>
-              <DatePicker label="End Date" value={endDate} onChange={date => this.handleEndDateChange(date)} />
-            </MuiPickersUtilsProvider>
-          </div>
-        </div>
-        {loading ? (
-          <LinearProgress />
-        ) : (
-          <div>
-            <Table aria-label="bitcoin table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Bitcoin Price (USD)</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {prices.map(row => (
-                  <TableRow key={`${row.date}/${row.price}`}>
-                    <TableCell>{row.date}</TableCell>
-                    <TableCell>{row.price}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Plot
-              data={[
-                {
-                  x: prices.map(row => row.date),
-                  y: prices.map(row => row.price),
-                  type: "scatter",
-                  mode: "lines+markers",
-                  marker: { color: "red" }
-                }
-              ]}
-              useResizeHandler
-              style={{ width: "100%", height: "100%" }}
-              layout={{
-                autosize: true,
-                title: `Bitcoin Prices from ${this.formatDateString(beginDate)} to ${this.formatDateString(endDate)}`
-              }}
-            />
-          </div>
-        )}
-      </Container>
+          <Snackbar anchorOrigin={{ vertical: "top", horizontal: "center" }} open={error !== ""} message={error} />
+          {loading ? (
+            <LinearProgress />
+          ) : (
+            !error && (
+              <div>
+                <Table aria-label="bitcoin table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Bitcoin Price (USD)</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {prices.map(row => (
+                      <TableRow key={`${row.date}/${row.price}`}>
+                        <TableCell>{row.date}</TableCell>
+                        <TableCell>{row.price}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <Plot
+                  data={[
+                    {
+                      x: prices.map(row => row.date),
+                      y: prices.map(row => row.price),
+                      type: "scatter",
+                      mode: "lines+markers",
+                      marker: { color: "blue" }
+                    }
+                  ]}
+                  useResizeHandler
+                  style={{ width: "100%", height: "100%" }}
+                  layout={{
+                    autosize: true,
+                    title: `Bitcoin Prices from ${this.formatDateString(beginDate)} to ${this.formatDateString(
+                      endDate
+                    )}`
+                  }}
+                />
+              </div>
+            )
+          )}
+        </Container>
+      </div>
     );
   }
 }
