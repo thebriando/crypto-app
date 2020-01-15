@@ -1,0 +1,20 @@
+.date-pickers {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  text-align: center;
+  z-index: -1;
+  .date-picker {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  @media only screen and (min-width: 600px) {
+    .date-picker {
+      display: inline;
+    }
+  }
+  .begin-date {
+    margin-right: 1rem;
+    margin-left: 1rem;
+  }
+}

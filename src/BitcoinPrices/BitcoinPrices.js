@@ -1,7 +1,11 @@
-import React, { Component } from "react";
-import { Container, Table, TableHead, TableRow, TableBody, TableCell, CircularProgress } from "@material-ui/core";
-import { DatePicker, KeyboardDatePicker, DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import DateFnsUtils from "@date-io/date-fns";
+import { Container, LinearProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@material-ui/core";
+import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
+import React, { Component } from "react";
+import "./BitcoinPrices.scss";
+import Plotly from "plotly.js-basic-dist";
+import createPlotlyComponent from "react-plotly.js/factory";
+const Plot = createPlotlyComponent(Plotly);
 
 export class BitcoinPrices extends Component {
   constructor(props) {
@@ -61,39 +65,64 @@ export class BitcoinPrices extends Component {
       const beginDateStr = this.formatDateString(this.state.beginDate);
       const endDateStr = this.formatDateString(this.state.endDate);
       this.getPricesFromDates(beginDateStr, endDateStr);
-      // this.getPricesFromDates(this.state.beginDate, this.state.endDate);
     });
   };
   render() {
+    const { currentPrice, prices, beginDate, endDate, loading } = this.state;
     return (
       <Container>
-        <h1>Current Bitcoin Price: {this.state.currentPrice} USD</h1>
-        <h2>View Daily Bitcoin Prices</h2>
-        <MuiPickersUtilsProvider utils={DateFnsUtils}>
-          <DatePicker value={this.state.beginDate} onChange={date => this.handleBeginDateChange(date)} />
-        </MuiPickersUtilsProvider>
-        <MuiPickersUtilsProvider utils={DateFnsUtils}>
-          <DatePicker value={this.state.endDate} onChange={date => this.handleEndDateChange(date)} />
-        </MuiPickersUtilsProvider>
-        {this.state.loading ? (
-          <CircularProgress />
+        <h1>Current Bitcoin Price: {currentPrice} USD</h1>
+        <div className="date-pickers">
+          <h2 className="date-pickers-header">View Daily Bitcoin Prices</h2>
+          <div className="date-picker begin-date">
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <DatePicker label="Begin Date" value={beginDate} onChange={date => this.handleBeginDateChange(date)} />
+            </MuiPickersUtilsProvider>
+          </div>
+          <div className="date-picker end-date">
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <DatePicker label="End Date" value={endDate} onChange={date => this.handleEndDateChange(date)} />
+            </MuiPickersUtilsProvider>
+          </div>
+        </div>
+        {loading ? (
+          <LinearProgress />
         ) : (
-          <Table aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Bitcoin Price (USD)</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {this.state.prices.map(row => (
-                <TableRow key={row.date + row.price}>
-                  <TableCell>{row.date}</TableCell>
-                  <TableCell>{row.price}</TableCell>
+          <div>
+            <Table aria-label="bitcoin table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Bitcoin Price (USD)</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {prices.map(row => (
+                  <TableRow key={`${row.date}/${row.price}`}>
+                    <TableCell>{row.date}</TableCell>
+                    <TableCell>{row.price}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <Plot
+              data={[
+                {
+                  x: prices.map(row => row.date),
+                  y: prices.map(row => row.price),
+                  type: "scatter",
+                  mode: "lines+markers",
+                  marker: { color: "red" }
+                }
+              ]}
+              useResizeHandler
+              style={{ width: "100%", height: "100%" }}
+              layout={{
+                autosize: true,
+                title: `Bitcoin Prices from ${this.formatDateString(beginDate)} to ${this.formatDateString(endDate)}`
+              }}
+            />
+          </div>
         )}
       </Container>
     );
